@@ -1,20 +1,15 @@
+import { Formik, Form } from "formik";
 import { Link } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  Button,
-  Checkbox,
-  TextField,
-  Grid,
-  IconButton,
-  Box,
-  InputAdornment,
-  CardMedia,
-} from "@mui/material";
-import MuiFormControlLabel from "@mui/material/FormControlLabel";
-import { styled, useTheme } from "@mui/material/styles";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
-import argusLogo from "../../assets/ArgusLogo.png";
+import { loginSchema } from "@/validationSchemas";
+import { login, getAccount, getUS2 } from "@/apis";
+
+import { Checkbox, TextField } from "@mui/material";
+import MuiFormControlLabel from "@mui/material/FormControlLabel";
+import { styled } from "@mui/material/styles";
+
+import argusLogo from "@/assets/ArgusLogo.png";
 
 const Login = () => {
   const LinkStyled = styled(Link)(({ theme }) => ({
@@ -30,103 +25,115 @@ const Login = () => {
     },
   }));
 
-  const theme = useTheme();
+  const { data: accountData } = useQuery({
+    queryKey: ["userAccount"],
+    queryFn: () => getAccount(),
+  });
+
+  const { data: getUs2Data } = useQuery({
+    queryKey: ["getUs2Data"],
+    queryFn: () => getUS2(accountData?.data),
+    enabled: !!accountData?.data,
+  });
+
+  const {
+    mutateAsync: loginMutation,
+    isLoading: loginLoading,
+    error,
+  } = useMutation({
+    mutationFn: (payload) => login(payload),
+  });
 
   return (
-    <Box className="content-center">
-      <Card sx={{ zIndex: 1, width: "30%", margin: "auto" }}>
-        <CardMedia
-          component="img"
-          image={argusLogo}
-          alt="ArgusERP"
-          sx={{
-            height: 60,
-            backgroundColor: theme.palette.primary.main,
-            objectFit: "contain",
-            p: 4,
-          }}
-        />
-        <CardContent
-          sx={{ p: (theme) => `${theme.spacing(8, 9, 0)} !important` }}
-        >
-          <Grid container spacing={5}>
-            <Grid item xs={12}>
-              <TextField
-                name="email"
-                size="small"
-                fullWidth
-                label="Email"
-                // value={validation.values.email}
-                // onChange={validation.handleChange}
-                // error={validation.touched.email && validation.errors.email}
-                // helperText={validation.touched.email && validation.errors.email}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="password"
-                size="small"
-                fullWidth
-                label="Password"
-                // type={showPassword ? "text" : "password"}
-                // value={validation.values.password}
-                // onChange={validation.handleChange}
-                // error={validation.touched.password && validation.errors.password}
-                // helperText={validation.touched.password && validation.errors.password}
-                // InputProps={{
-                //   endAdornment: (
-                //     <InputAdornment position='end'>
-                //       <IconButton
-                //         edge='end'
-                //         onClick={() => setShowPassword(!showPassword)}
-                //         onMouseDown={e => e.preventDefault()}
-                //       >
-                //         <Icon icon={showPassword ? 'mdi:eye-outline' : 'mdi:eye-off-outline'} />
-                //       </IconButton>
-                //     </InputAdornment>
-                //   )
-                // }}
-              />
-            </Grid>
-          </Grid>
+    <div>
+      <div className="bg-black p-4">
+        <img className="w-[10%]" src={argusLogo} />
+      </div>
 
-          <Box
-            sx={{
-              mb: 4,
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              justifyContent: "space-between",
-            }}
-          >
-            <FormControlLabel
-              label="Remember Me"
-              control={
-                <Checkbox
-                  name="rememberMe"
-                  // checked={validation.values.rememberMe}
-                  // onChange={validation.handleChange}
-                />
-              }
-            />
-            <LinkStyled href="/pages/auth/forgot-password-v1">
-              Forgot Password?
-            </LinkStyled>
-          </Box>
+      <Formik
+        initialValues={{
+          email: "",
+          password: "",
+          rememberMe: false,
+        }}
+        validationSchema={loginSchema}
+        onSubmit={async (values) => {
+          const response = await loginMutation({
+            email: values.email,
+            password: values.password,
+            accountDetails: accountData?.data,
+            userDetails: getUs2Data?.data,
+          });
+        }}
+      >
+        {({ values, handleChange, errors, touched }) => (
+          <Form>
+            <div className="border w-[35%] m-auto mt-20 rounded-lg shadow-lg">
+              <div className="bg-black px-5 py-3 rounded-t-lg">
+                <span className="text-white">Login</span>
+              </div>
 
-          <Button
-            fullWidth
-            size="large"
-            type="submit"
-            variant="contained"
-            sx={{ mb: 7 }}
-            // onClick={validation.handleSubmit}
-          >
-            Login
-          </Button>
-        </CardContent>
-      </Card>
-    </Box>
+              <div className="p-5 rounded-lg">
+                <div className="flex flex-col gap-4">
+                  <TextField
+                    name="email"
+                    size="small"
+                    fullWidth
+                    label="Email"
+                    value={values.email}
+                    onChange={handleChange}
+                    error={touched.email && errors.email}
+                    helperText={touched.email && errors.email}
+                  />
+                  <TextField
+                    name="password"
+                    size="small"
+                    fullWidth
+                    label="Password"
+                    type="password"
+                    value={values.password}
+                    onChange={handleChange}
+                    error={touched.password && errors.password}
+                    helperText={touched.password && errors.password}
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <div className="flex justify-between items-center mt-5">
+                    <FormControlLabel
+                      name="rememberMe"
+                      label="Remember Me"
+                      control={
+                        <Checkbox
+                          name="rememberMe"
+                          checked={values.rememberMe}
+                          onChange={handleChange}
+                        />
+                      }
+                    />
+                    <LinkStyled
+                      sx={{ color: "#808080" }}
+                      href="/pages/auth/forgot-password-v1"
+                    >
+                      Forgot Password?
+                    </LinkStyled>
+                  </div>
+
+                  <div className="m-auto mt-4">
+                    <button
+                      type="submit"
+                      className="bg-[#808080] text-white px-5 py-2 rounded-lg"
+                    >
+                      Login
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Form>
+        )}
+      </Formik>
+    </div>
   );
 };
 
