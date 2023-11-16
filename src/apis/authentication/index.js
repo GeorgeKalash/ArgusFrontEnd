@@ -9,14 +9,14 @@ export const getAccount = () => {
 
 export const getUS2 = (params) => {
   return axios.get(
-    `${
-      import.meta.env.VITE_PUBLIC_BASE_URL
-    }/SY.asmx/getUS2?_email=Puzant.Bakjejian@SoftMachine.co`,
+    `${import.meta.env.VITE_PUBLIC_BASE_URL}/SY.asmx/getUS2?_email=${
+      params.email
+    }`,
     {
       headers: {
-        accountId: JSON.parse(params.record.accountId),
-        dbe: JSON.parse(params.record.dbe),
-        dbs: JSON.parse(params.record.dbs),
+        accountId: JSON.parse(params.accountDetails.record.accountId),
+        dbe: JSON.parse(params.accountDetails.record.dbe),
+        dbs: JSON.parse(params.accountDetails.record.dbs),
       },
     }
   );

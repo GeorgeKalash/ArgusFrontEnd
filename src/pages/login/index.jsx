@@ -1,5 +1,6 @@
+import React from "react";
 import { Formik, Form } from "formik";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 import { loginSchema } from "@/validationSchemas";
@@ -12,6 +13,9 @@ import { styled } from "@mui/material/styles";
 import argusLogo from "@/assets/ArgusLogo.png";
 
 const Login = () => {
+  const ref = React.useRef(null);
+  const navigate = useNavigate();
+
   const LinkStyled = styled(Link)(({ theme }) => ({
     fontSize: "0.875rem",
     textDecoration: "none",
@@ -32,7 +36,11 @@ const Login = () => {
 
   const { data: getUs2Data } = useQuery({
     queryKey: ["getUs2Data"],
-    queryFn: () => getUS2(accountData?.data),
+    queryFn: () =>
+      getUS2({
+        accountDetails: accountData?.data,
+        email: ref.current.values.email,
+      }),
     enabled: !!accountData?.data,
   });
 
@@ -51,6 +59,7 @@ const Login = () => {
       </div>
 
       <Formik
+        innerRef={ref}
         initialValues={{
           email: "",
           password: "",
@@ -64,6 +73,25 @@ const Login = () => {
             accountDetails: accountData?.data,
             userDetails: getUs2Data?.data,
           });
+
+          const loggedUser = {
+            accountId: accountData.data.record.accountId,
+            userId: getUs2Data.data.record.recordId,
+            email: getUs2Data.data.record.email,
+            languageId: getUs2Data.data.record.languageId,
+            userType: getUs2Data.data.record.userType,
+            employeeId: getUs2Data.data.record.employeeId,
+            fullName: getUs2Data.data.record.fullName,
+            role: "admin",
+            username: getUs2Data.data.record.fullName,
+            id: 1,
+            // expiresAt: jwt(response.data.record.accessToken).exp,
+            accessToken: response.data.record.accessToken,
+            ...response.data.record,
+          };
+
+          localStorage.setItem("userData", JSON.stringify(loggedUser));
+          navigate("/");
         }}
       >
         {({ values, handleChange, errors, touched }) => (
