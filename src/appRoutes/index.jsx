@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import { PrivateRoutes } from "./privateRoutes";
 import Login from "@/pages/login";
@@ -9,8 +9,7 @@ const AppRoutes = () => {
     <Routes>
       <Route element={<PrivateRoutes />}>
         <Route path="/" element={<Home />} />
-      </Route>
-      
+      </Route>  
       <Route path="/login" element={<Login />} />
       <Route path="/login/test/" element={<Test/>} />
     </Routes>
